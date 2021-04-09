@@ -1,6 +1,6 @@
 # system-stats-daemon
 
-###[Задание к проекту](https://github.com/OtusGolang/final_project/edit/master/05-system-stats-daemon.md)
+### [Задание к проекту](https://github.com/OtusGolang/final_project/edit/master/05-system-stats-daemon.md)
 
 
 ### Архитектура
