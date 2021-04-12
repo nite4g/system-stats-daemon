@@ -7,8 +7,8 @@ import (
 )
 
 type Config struct {
-	name     string
-	interval time.Duration
+	Name     string
+	Interval time.Duration
 }
 
 type MetricValue struct {
