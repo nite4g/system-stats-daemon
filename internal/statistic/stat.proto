@@ -1,0 +1,19 @@
+syntax="proto3";
+
+import "google/protobuf/timestamp.proto";
+
+package statistic;
+option go_package = "../statistic";
+
+// сервис контракт
+service StatisticService {
+  rpc Send(StatisticMessage) returns(StatisticMessage);
+}
+
+message StatisticMessage{
+  string metric = 1;
+  string value = 2;
+  google.protobuf.Timestamp timestamp = 3;
+}
+
+//protoc --go_out=. --go-grpc_out=. stat.proto
