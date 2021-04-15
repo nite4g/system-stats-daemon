@@ -6,11 +6,13 @@ import (
 	"strconv"
 	"strings"
 	"time"
+
+	"github.com/rs/zerolog/log"
 )
 
 type OsName string
 
-var FetchError = errors.New("Metric fetch error.")
+var ErrorFetcher = errors.New("Metric fetch error.")
 
 type MetricResult struct {
 	Value     float64
@@ -26,10 +28,17 @@ const (
 // TODO: придумать как пробрасывать OsName более элегантно
 
 func GetCpuLA(os OsName) *MetricResult {
-	value, err := fetchCpuLA(os)
+	value, err := fetchCPULA(os)
+
+	res := &MetricResult{
+		Value:     0,
+		Error:     nil,
+		timestamp: time.Now(),
+	}
 
 	if err != nil {
-		return &MetricResult{Value: 0, Error: err}
+		res.Error = err
+		return res
 	}
 
 	var metric float64
@@ -38,43 +47,52 @@ func GetCpuLA(os OsName) *MetricResult {
 	case Macos:
 		// value  "{ 2,02 2,11 1,99 }"
 		s := strings.Fields(value)[1]
-		metric, err = strconv.ParseFloat(s, 32)
+		s = strings.ReplaceAll(s, ",", ".")
+		metric, err = strconv.ParseFloat(s, 16)
 		if err != nil {
-
-			return &MetricResult{Value: 0, Error: FetchError}
+			log.Error().Err(err).Msg("convertation from string error")
+			res.Error = err
+			return res
 		}
+		res.Value = metric
+
 	case Linux:
 		// value "0.52 0.34 0.13 1/433 1769"
 		s := strings.Fields(value)[0]
-		metric, err = strconv.ParseFloat(s, 32)
+		metric, err = strconv.ParseFloat(s, 16)
 		if err != nil {
-			return &MetricResult{Value: 0, Error: FetchError}
+			log.Error().Err(err).Msg("convertation from string error")
+			res.Error = err
+			return res
 		}
+		res.Value = metric
 
 	default:
-		return &MetricResult{Value: 0, Error: FetchError}
+		log.Error().Err(ErrorFetcher).Str("os", string(os)).Msg("wrong Os")
+		res.Error = ErrorFetcher
+		return res
 	}
 
-	return &MetricResult{Value: metric, Error: nil}
+	return res
 }
 
-func fetchCpuLA(os OsName) (string, error) {
+func fetchCPULA(os OsName) (string, error) {
 	// sysctl -n vm.loadavg  for Mac OS
-	var cmd string
+	var cmd *exec.Cmd
 
 	switch os {
 	case Macos:
-		cmd = "/usr/sbin/sysctl -n vm.loadavg"
+		cmd = exec.Command("/usr/sbin/sysctl", "-n", "vm.loadavg")
 	case Linux:
-		cmd = "/usr/bin/cat /proc/loadavg"
+		cmd = exec.Command("/usr/bin/cat", "/proc/loadavg")
 	default:
-		return "", FetchError
+		return "", ErrorFetcher
 	}
 
-	app := exec.Command(cmd)
-	out, err := app.Output()
+	out, err := cmd.Output()
 	if err != nil {
-		return "", FetchError
+		log.Error().Err(err).Msg("os cmd error")
+		return "", err
 	}
 
 	return string(out), nil

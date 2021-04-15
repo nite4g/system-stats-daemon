@@ -17,17 +17,8 @@ type callback struct {
 	cb   MetricCallback
 }
 
-type MetricValue struct {
-	// metric name i.e. "cpu_la", "mem_free", "disk_space"
-	name string
-	// current value
-	value float32
-	// unit i.e. "MB", "inodes", "secs"
-	unit string
-}
-
 type Collector interface {
-	Run()
+	Run() []MetricResult
 	AddCallBack(string, MetricCallback)
 }
 
@@ -46,21 +37,23 @@ func (c *collector) AddCallBack(name string, cb MetricCallback) {
 	c.mu.Unlock()
 }
 
-func (c *collector) Run() {
+func (c *collector) Run() []MetricResult {
 	var wg sync.WaitGroup
-	result := MetricResponse
+
+	var result []MetricResult
 	for _, cb := range c.callbacks {
 		wg.Add(1)
 		go func(cb callback) {
 			defer wg.Done()
-			cb.cb()
-
+			c.mu.Lock()
+			result = append(result, *cb.cb())
+			c.mu.Unlock()
 		}(cb)
 	}
 	// да это не оптимально, но считаем что временем чтения метрики можно пренебречь
 	wg.Wait()
 
-	time.Sleep(c.opts.Interval * time.Second)
+	return result
 }
 
 func NewCollector(opts Config) Collector {

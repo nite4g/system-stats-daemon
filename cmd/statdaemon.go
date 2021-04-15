@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/nite4g/system-stats-daemon/internal/collector"
@@ -15,6 +16,13 @@ func main() {
 	mc.AddCallBack("cpu_la", collector.MetricCallback(func() *collector.MetricResult {
 		return collector.GetCpuLA(collector.Macos)
 	}))
-	mc.Run()
+	result := mc.Run()
+
+	for _, r := range result {
+		if r.Error != nil {
+			fmt.Println(r.Error)
+		}
+		fmt.Printf("%v\n", r)
+	}
 
 }
