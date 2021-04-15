@@ -1,7 +1,6 @@
 package main
 
 import (
-	"context"
 	"time"
 
 	"github.com/nite4g/system-stats-daemon/internal/collector"
@@ -12,6 +11,10 @@ func main() {
 		Name:     "cpu",
 		Interval: 3 * time.Second,
 	})
-	ctx := context.Background()
-	mc.Run(ctx)
+	// ctx := context.Background()
+	mc.AddCallBack("cpu_la", collector.MetricCallback(func() *collector.MetricResult {
+		return collector.GetCpuLA(collector.Macos)
+	}))
+	mc.Run()
+
 }

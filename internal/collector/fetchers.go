@@ -1,51 +1,61 @@
 package collector
 
 import (
+	"errors"
 	"os/exec"
 	"strconv"
 	"strings"
+	"time"
 )
 
 type OsName string
 
-var FetchError = error.New("Metric fetch error")
+var FetchError = errors.New("Metric fetch error.")
+
+type MetricResult struct {
+	Value     float64
+	Error     error
+	timestamp time.Time
+}
 
 const (
-	macos OsName = "os"
-	linux OsName = "linux"
+	Macos OsName = "os"
+	Linux OsName = "linux"
 )
 
-// TODO: придумать как пробрасывать OsName более элегантное решение
+// TODO: придумать как пробрасывать OsName более элегантно
 
-func GetCpuLA(os OsName) (float64, error) {
+func GetCpuLA(os OsName) *MetricResult {
 	value, err := fetchCpuLA(os)
+
 	if err != nil {
-		return 0, FetchError
+		return &MetricResult{Value: 0, Error: err}
 	}
 
 	var metric float64
 
 	switch os {
-	case macos:
+	case Macos:
 		// value  "{ 2,02 2,11 1,99 }"
 		s := strings.Fields(value)[1]
 		metric, err = strconv.ParseFloat(s, 32)
 		if err != nil {
-			return 0, FetchError
+
+			return &MetricResult{Value: 0, Error: FetchError}
 		}
-	case linux:
+	case Linux:
 		// value "0.52 0.34 0.13 1/433 1769"
 		s := strings.Fields(value)[0]
 		metric, err = strconv.ParseFloat(s, 32)
 		if err != nil {
-			return 0, FetchError
+			return &MetricResult{Value: 0, Error: FetchError}
 		}
 
 	default:
-		return 0, FetchError
+		return &MetricResult{Value: 0, Error: FetchError}
 	}
 
-	return metric, nil
+	return &MetricResult{Value: metric, Error: nil}
 }
 
 func fetchCpuLA(os OsName) (string, error) {
@@ -53,9 +63,9 @@ func fetchCpuLA(os OsName) (string, error) {
 	var cmd string
 
 	switch os {
-	case macos:
+	case Macos:
 		cmd = "/usr/sbin/sysctl -n vm.loadavg"
-	case linux:
+	case Linux:
 		cmd = "/usr/bin/cat /proc/loadavg"
 	default:
 		return "", FetchError
