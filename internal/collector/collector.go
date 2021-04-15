@@ -18,7 +18,7 @@ type callback struct {
 }
 
 type Collector interface {
-	Run() []MetricResult
+	Run() map[string]MetricResult
 	AddCallBack(string, MetricCallback)
 }
 
@@ -37,20 +37,21 @@ func (c *collector) AddCallBack(name string, cb MetricCallback) {
 	c.mu.Unlock()
 }
 
-func (c *collector) Run() []MetricResult {
+func (c *collector) Run() map[string]MetricResult {
 	var wg sync.WaitGroup
 
-	var result []MetricResult
+	result := map[string]MetricResult{}
+
 	for _, cb := range c.callbacks {
 		wg.Add(1)
 		go func(cb callback) {
 			defer wg.Done()
 			c.mu.Lock()
-			result = append(result, *cb.cb())
+			result[cb.name] = *cb.cb()
 			c.mu.Unlock()
 		}(cb)
 	}
-	// да это не оптимально, но считаем что временем чтения метрики можно пренебречь
+	// это не оптимально, но считаем что временем чтения метрики можно пренебречь
 	wg.Wait()
 
 	return result

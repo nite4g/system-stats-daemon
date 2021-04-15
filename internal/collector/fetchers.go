@@ -12,7 +12,7 @@ import (
 
 type OsName string
 
-var ErrorFetcher = errors.New("Metric fetch error.")
+var ErrorFetcher = errors.New("metric fetch error")
 
 type MetricResult struct {
 	Value     float64
@@ -26,8 +26,7 @@ const (
 )
 
 // TODO: придумать как пробрасывать OsName более элегантно
-
-func GetCpuLA(os OsName) *MetricResult {
+func GetCPULA(os OsName) *MetricResult {
 	value, err := fetchCPULA(os)
 
 	res := &MetricResult{
