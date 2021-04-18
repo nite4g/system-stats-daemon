@@ -7,7 +7,7 @@ option go_package = "../statistic";
 
 // сервис контракт
 service StatisticService {
-  rpc Send(StatisticMessage) returns(StatisticMessage);
+  rpc Send(StatisticMessage) returns(StatisticMessage){}
 }
 
 message StatisticMessage{
@@ -16,4 +16,5 @@ message StatisticMessage{
   google.protobuf.Timestamp timestamp = 3;
 }
 
-//protoc --go_out=. --go-grpc_out=. stat.proto
+// protoc --go_out=plugins=grpc:. stat.proto
+// ex. =grpc:{dir}
