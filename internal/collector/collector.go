@@ -2,15 +2,15 @@ package collector
 
 import (
 	"sync"
-	"time"
+
+	"github.com/nite4g/system-stats-daemon/internal/fetchers"
 )
 
 type Config struct {
-	Name     string
-	Interval time.Duration
+	Name string
 }
 
-type MetricCallback func() *MetricResult
+type MetricCallback func() *fetchers.MetricResult
 
 type callback struct {
 	name string
@@ -18,7 +18,7 @@ type callback struct {
 }
 
 type Collector interface {
-	Run() map[string]MetricResult
+	Process() map[string]fetchers.MetricResult
 	AddCallBack(string, MetricCallback)
 }
 
@@ -37,11 +37,11 @@ func (c *collector) AddCallBack(name string, cb MetricCallback) {
 	c.mu.Unlock()
 }
 
-func (c *collector) Run() map[string]MetricResult {
+func (c *collector) Process() map[string]fetchers.MetricResult {
+	//TODO: add context here
 	var wg sync.WaitGroup
 
-	result := map[string]MetricResult{}
-
+	result := map[string]fetchers.MetricResult{}
 	for _, cb := range c.callbacks {
 		wg.Add(1)
 		go func(cb callback) {

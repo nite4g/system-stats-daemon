@@ -1,70 +1,53 @@
-package collector
+package fetchers
 
 import (
-	"errors"
 	"os/exec"
-	"strconv"
 	"strings"
 	"time"
 
 	"github.com/rs/zerolog/log"
 )
 
-type OsName string
-
-var ErrorFetcher = errors.New("metric fetch error")
-
-type MetricResult struct {
-	Value     float64
-	Error     error
-	timestamp time.Time
-}
-
-const (
-	Macos OsName = "os"
-	Linux OsName = "linux"
-)
-
 // TODO: придумать как пробрасывать OsName более элегантно
 func GetCPULA(os OsName) *MetricResult {
-	value, err := fetchCPULA(os)
 
 	res := &MetricResult{
-		Value:     0,
+		Value:     nil,
 		Error:     nil,
 		timestamp: time.Now(),
 	}
 
+	value, err := fetchCPULA(os)
 	if err != nil {
 		res.Error = err
 		return res
 	}
 
-	var metric float64
+	// var metric float64
 
 	switch os {
 	case Macos:
 		// value  "{ 2,02 2,11 1,99 }"
 		s := strings.Fields(value)[1]
 		s = strings.ReplaceAll(s, ",", ".")
-		metric, err = strconv.ParseFloat(s, 16)
+		// metric, err = strconv.ParseFloat(s, 16)
 		if err != nil {
 			log.Error().Err(err).Msg("convertation from string error")
 			res.Error = err
 			return res
 		}
-		res.Value = metric
+		res.Value = []string{s}
 
 	case Linux:
 		// value "0.52 0.34 0.13 1/433 1769"
 		s := strings.Fields(value)[0]
-		metric, err = strconv.ParseFloat(s, 16)
+		// metric, err = strconv.ParseFloat(s, 16)
 		if err != nil {
 			log.Error().Err(err).Msg("convertation from string error")
 			res.Error = err
 			return res
 		}
-		res.Value = metric
+		res.Value = []string{s}
 
 	default:
 		log.Error().Err(ErrorFetcher).Str("os", string(os)).Msg("wrong Os")
@@ -76,6 +59,8 @@ func GetCPULA(os OsName) *MetricResult {
 }
 
 func fetchCPULA(os OsName) (string, error) {
+
+	// TODO: бесполезная функция, все равно есть ветвление в предыдущей
 	// sysctl -n vm.loadavg  for Mac OS
 	var cmd *exec.Cmd
 
