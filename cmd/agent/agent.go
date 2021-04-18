@@ -15,7 +15,7 @@ func main() {
 	if err != nil {
 		log.Fatalf("did not connect: %s", err)
 	}
-	defer conn.Cl
+	defer conn.Close()
 
 	c := statistic.NewStatisticServiceClient(conn)
 
